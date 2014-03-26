@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>entry</key>
+	<dict>
+		<key>cell</key>
+		<string>PSLinkCell</string>
+		<key>icon</key>
+		<string>/Applications/Preferences.app/icon-table@2x.png</string>
+		<key>label</key>
+		<string>FlipNC</string>
+	</dict>
+	<key>items</key>
+	<array>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+		</dict>
+		<dict>
+			<key>PostNotification</key>
+			<string>com.uroboro.flipnc.preferences.changed</string>
+			<key>cell</key>
+			<string>PSLinkListCell</string>
+			<key>default</key>
+			<integer>2</integer>
+			<key>defaults</key>
+			<string>com.uroboro.FlipNC</string>
+			<key>detail</key>
+			<string>PSListItemsController</string>
+			<key>key</key>
+			<string>TemplateIdx</string>
+			<key>label</key>
+			<string>Template</string>
+			<key>validTitles</key>
+			<array>
+				<string>FlipNC</string>
+				<string>SwitchIcons (by rpetrich)</string>
+			</array>
+			<key>validValues</key>
+			<array>
+				<integer>0</integer>
+				<integer>1</integer>
+			</array>
+		</dict>
+		<dict>
+			<key>bundle</key>
+			<string>FlipswitchSettings</string>
+			<key>cell</key>
+			<string>PSLinkCell</string>
+			<key>flipswitchDisabledKey</key>
+			<string>Disabled</string>
+			<key>flipswitchEnabledKey</key>
+			<string>Enabled</string>
+			<key>flipswitchNewAreDisabled</key>
+			<false/>
+			<key>flipswitchPostNotification</key>
+			<string>com.uroboro.flipnc.flipswitches.changed</string>
+			<key>flipswitchSettingsFile</key>
+			<string>/var/mobile/Library/Preferences/com.uroboro.FlipNC.plist</string>
+			<key>flipswitchTemplateBundle</key>
+			<string>/Library/Application Support/FlipNC/SwitchIconsTemplate.bundle</string>
+			<key>isController</key>
+			<true/>
+			<key>label</key>
+			<string>Flipswitch settings</string>
+		</dict>
+		<dict>
+			<key>PostNotification</key>
+			<string>com.uroboro.flipnc.preferences.changed</string>
+			<key>cell</key>
+			<string>PSLinkListCell</string>
+			<key>default</key>
+			<integer>0</integer>
+			<key>defaults</key>
+			<string>com.uroboro.FlipNC</string>
+			<key>detail</key>
+			<string>PSListItemsController</string>
+			<key>key</key>
+			<string>SwitchesPerRow</string>
+			<key>label</key>
+			<string>Switches Per Row</string>
+			<key>validTitles</key>
+			<array>
+				<string>Unpaged</string>
+				<string>2</string>
+				<string>3</string>
+				<string>4</string>
+				<string>5</string>
+			</array>
+			<key>validValues</key>
+			<array>
+				<integer>0</integer>
+				<integer>2</integer>
+				<integer>3</integer>
+				<integer>4</integer>
+				<integer>5</integer>
+			</array>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>footerText</key>
+			<string>Developed by uroboro © 2014</string>
+		</dict>
+	</array>
+	<key>title</key>
+	<string>FlipNC</string>
+</dict>
+</plist>

@@ -1,142 +1,95 @@
-#import <flipswitch/FSSwitchPanel.h>
-#import "BBWeeAppController-Protocol.h"
+#import "FlipNCController.h"
 
-#define PREFERENCESFILE @"/User/Library/Preferences/com.uroboro.FlipNC.plist"
-//static const char *FNCPreferencesChangedNotification = "com.uroboro.flipncC.preferences.changed";
-
-//static void FNCCreateDefaultPreferences(void);
-
-#ifdef UIUserInterfaceIdiomPad
-#define isPad() ([UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPad)
-#else
-#define isPad() NO
-#endif
-
-#define MyTemplatePath @"/Library/Application Support/FlipNC/IconTemplate.bundle"
-#define SIiPhoneTemplatePath @"/Library/Application Support/FlipNC/SwitchIconsTemplate.bundle"
-#define SIiPadTemplatePath @"/Library/Application Support/FlipNC/SwitchIconsTemplate~ipad.bundle"
-#define SITemplatePath (isPad()?SIiPadTemplatePath:SIiPhoneTemplatePath)
-
-
-#define NO_DBG
-#ifndef NO_DBG
-
-#define UResetStringNotification "com.uroboro.flipnc.resetString"
-
-static char *string;
-static long offset;
-static long size;
-static char *filename;
-
-#define stringify(x) #x
-#define U_debug(x) U_debug_(stringify(x))
-
-static inline void U_debug_(char *c) {
-	string[offset] = c[0];
-	offset++;
-
-	FILE *fp = fopen(filename, "w");
-	fprintf(fp, "%s", string);
-	fclose(fp);
-}
-
-static void UResetString(void) {
-	offset = 0;
-	memset(string, 0, size);
-}
-
-static void UResetStringCallback(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo) {
-	UResetString();
-}
-
-static __attribute__((constructor)) void startup(void) {
-	size = 1 << 8;
-	string = (char *)malloc(size * sizeof(char));
-	filename = "/User/u.log";
-	UResetString();
-
-	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-	CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, UResetStringCallback, CFSTR(UResetStringNotification), NULL, CFNotificationSuspensionBehaviorCoalesce);
-	[pool release];
-}
-#else
-#define U_debug(x)
-#endif
-
-
-
-
-
+static NSString* const preferencesFilePath = @"/User/Library/Preferences/com.uroboro.FlipNC.plist";
 static NSBundle *_FlipNCWeeAppBundle = nil;
+static BOOL _landscape;
 
-@interface FlipNCController: NSObject <BBWeeAppController> {
-	UIView *_view;
-	UIImageView *_backgroundView;
-}
-@property (nonatomic, retain) UIView *view;
-@end
+#define showAlert(t, m) [[[[UIAlertView alloc] initWithTitle:(t) message:(m) delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil] autorelease] show];
 
 @implementation FlipNCController
 @synthesize view = _view;
 
 + (void)initialize {
-U_debug(0);
 	_FlipNCWeeAppBundle = [[NSBundle bundleForClass:[self class]] retain];
-//	FNCCreateDefaultPreferences();
 }
 
 - (id)init {
-U_debug(1);
 	if ((self = [super init]) != nil) {
 		// do init stuff
 	} return self;
 }
 
 - (void)dealloc {
-U_debug(2);
 	[_view release];
 	[_backgroundView release];
 	[super dealloc];
 }
 
-- (void)loadFullView {
-U_debug(3);
-	// Add subviews to _backgroundView (or _view) here.
-	FSSwitchPanel *fsp = [FSSwitchPanel sharedPanel];
-
-	NSMutableArray *ids = [[NSMutableArray alloc] initWithArray:fsp.switchIdentifiers];
-	[ids sortUsingSelector:@selector(caseInsensitiveCompare:)];
-
-	NSDictionary *prefs = [[NSDictionary alloc] initWithContentsOfFile:PREFERENCESFILE];
-	BOOL useSI = [[prefs objectForKey:@"useSwitchIconsTemplate"] boolValue];
+- (float)viewHeight {
+	NSDictionary *prefs = [[NSDictionary alloc] initWithContentsOfFile:preferencesFilePath];
+	int templateIdx = [[prefs objectForKey:@"TemplateIdx"] intValue];
+	int rows = [[prefs objectForKey:@"Rows"] intValue];
 	[prefs release];
-	NSBundle *templateBundle = [[NSBundle alloc] initWithPath:useSI?SITemplatePath:MyTemplatePath];
 
-	CGRect r = CGRectMake(_backgroundView.frame.origin.x, _backgroundView.frame.origin.y, _backgroundView.frame.size.width, _backgroundView.frame.size.height - 2);
-	UIScrollView *scv = [[UIScrollView alloc] initWithFrame:r];
+	NSArray *templates = [[NSArray alloc] initWithObjects:MyTemplatePath, SITemplatePath, nil];
+	NSBundle *templateBundle = [[NSBundle alloc] initWithPath:[templates objectAtIndex:templateIdx]];
+	[templates release];
+	CGFloat iconHeight = [[templateBundle.infoDictionary objectForKey:@"height"] floatValue];
+	[templateBundle release];
+
+	return (rows)?rows:1 * (10 + iconHeight) + (float)(2 << 1);
+}
+
+- (void)loadFullView {
+	// Add subviews to _backgroundView (or _view) here.
+
+	NSDictionary *prefs = [[NSDictionary alloc] initWithContentsOfFile:preferencesFilePath];
+	NSArray *ids = [[prefs objectForKey:@"Enabled"] retain];
+	int templateIdx = [[prefs objectForKey:@"TemplateIdx"] intValue];
+	int switchesPerRow = [[prefs objectForKey:@"SwitchesPerRow"] intValue];
+	BOOL unpaged = !switchesPerRow;
+//	int rows = [[prefs objectForKey:@"Rows"] intValue];
+	CGFloat offset = [[prefs objectForKey:@"Offset"] floatValue];
+	[prefs release];
+
+	NSArray *templates = [[NSArray alloc] initWithObjects:MyTemplatePath, SITemplatePath, nil];
+	NSBundle *templateBundle = [[NSBundle alloc] initWithPath:[templates objectAtIndex:templateIdx]];
+	[templates release];
+
+	CGFloat iconWidth = [[templateBundle.infoDictionary objectForKey:@"width"] floatValue];
+	CGFloat iconHeight = [[templateBundle.infoDictionary objectForKey:@"height"] floatValue];
+
+	CGFloat screenWidth = _backgroundView.frame.size.width;
+	CGFloat screenHeight = _backgroundView.frame.size.height;
+
+	int defaultSwitchesPerRow = (_landscape)?7:4;
+
+	CGFloat xSpacing = (CGFloat)(screenWidth - ((unpaged)? defaultSwitchesPerRow:switchesPerRow) * iconWidth) / (((unpaged)? defaultSwitchesPerRow:switchesPerRow) + 1);
+	CGFloat contentWidth = (unpaged)? (xSpacing + [ids count] * (iconWidth + xSpacing)) : (screenWidth * ([ids count] / switchesPerRow + ([ids count] % switchesPerRow != 0)));
+
+	UIScrollView *scv = [[UIScrollView alloc] initWithFrame:CGRectMake(2, 0, screenWidth, screenHeight - 2)];
 	[scv setScrollEnabled:YES];
-	//[scv setPagingEnabled:YES];
-	[scv setContentSize:CGSizeMake(320 * [ids count] / 4, [self viewHeight] - 4)];
-	[scv setAutoresizingMask: UIViewAutoresizingFlexibleWidth];
+	[scv setPagingEnabled:!unpaged];
+	[scv setContentSize:CGSizeMake(contentWidth, screenHeight - 2)];
+	[scv setContentOffset:CGPointMake(offset * screenWidth, 0.0) animated:NO];
+	[scv setAutoresizingMask:UIViewAutoresizingFlexibleWidth];
 
+	FSSwitchPanel *fsp = [FSSwitchPanel sharedPanel];
 	for (int idx = 0; idx < [ids count]; idx++) {
 		NSString *identifier = [ids objectAtIndex:idx];
 		UIButton *button = [fsp buttonForSwitchIdentifier:identifier usingTemplate:templateBundle];
-		CGRect newFrame = CGRectMake(
-//			10 + (idx / 4) * 320 + (idx % 4) * (20 + button.frame.size.width), 4,
-			10 + idx * (20 + button.frame.size.width + (60 - button.frame.size.width)), 4,
-			button.frame.size.width, button.frame.size.height);
-		[button setFrame:newFrame];
+		CGFloat x = (unpaged)? (xSpacing + idx * (iconWidth + xSpacing)) : (xSpacing + (idx / switchesPerRow) * screenWidth + (idx % switchesPerRow) * (iconWidth + xSpacing));
+		[button setFrame:CGRectMake(x, 5, iconWidth, iconHeight)];
 		[scv addSubview:button];
 	}
 	[templateBundle release];
 	[ids release];
+
 	[_view addSubview:scv];
 	[scv release];
 }
 
 - (void)loadPlaceholderView {
-U_debug(4);
 	// This should only be a placeholder - it should not connect to any servers or perform any intense
 	// data loading operations.
 	//
@@ -152,98 +105,29 @@ U_debug(4);
 	[_view addSubview:_backgroundView];
 }
 
+- (void)viewWillDisappear {
+	//save scrollview offset
+	UIScrollView *scv = ([_view.subviews count] > 1)? (UIScrollView *)[_view.subviews objectAtIndex:1]:nil; //prevent NSRangeException
+	if (scv) {
+		//offset is a percentage of the "screen" width
+		CGFloat offset = scv.contentOffset.x / ((_landscape)? 564:316);
+		NSMutableDictionary *prefs = [[NSMutableDictionary alloc] initWithContentsOfFile:preferencesFilePath];
+		[prefs setObject:[NSNumber numberWithFloat:offset] forKey:@"Offset"];
+		[prefs writeToFile:preferencesFilePath atomically:YES];
+		[prefs release];
+	}
+}
+
 - (void)unloadView {
-U_debug(5);
 	[_view release];
 	_view = nil;
 	[_backgroundView release];
 	_backgroundView = nil;
 	// Destroy any additional subviews you added here. Don't waste memory :(.
 }
-/*
-- (id)view {
-U_debug(I);
-return _view;
-}
-*/
-- (float)viewHeight {
-U_debug(H);
-	return 71.f;
-}
-/*
-- (void)loadView {
-U_debug(6);
-}
-- (void)clearShapshotImage {
-U_debug(7);
-}
-- (id)launchURL {
-U_debug(8);
-return nil;
-}
-- (id)launchURLForTapLocation:(CGPoint)tapLocation {
-U_debug(9);
-return nil;
-}
-- (void)viewWillAppear {
-U_debug(A);
-}
-- (void)viewDidAppear {
-U_debug(B);
-}
+
 - (void)willRotateToInterfaceOrientation:(int)interfaceOrientation {
-U_debug(C);
+	_landscape = (interfaceOrientation == 3 || interfaceOrientation == 4);
 }
-- (void)willAnimateRotationToInterfaceOrientation:(int)interfaceOrientation {
-U_debug(D);
-}
-- (void)didRotateFromInterfaceOrientation:(int)interfaceOrientation {
-U_debug(E);
-}
-- (void)viewWillDisappear {
-U_debug(F);
-}
-- (void)viewDidDisappear {
-U_debug(G);
-}
-*/
+
 @end
-/*
-static void FNCCreateDefaultPreferences(void) {
-	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-	NSDictionary *d = [[NSDictionary alloc] initWithObjects:
-		[NSArray arrayWithObjects:
-			[NSNumber numberWithBool:YES],
-		nil]
-	forKeys:
-		[NSArray arrayWithObjects:
-			@"useSwitchIconsTemplate",
-		nil]
-	];
-	[d writeToFile:PREFERENCESFILE atomically:YES];
-	[d release];
-
-	[pool release];
-}
-
-//notification managing
-
-static void FNCPreferencesChanged(void) {
-	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-	FNCReloadPreferences();
-	[pool release];
-}
-
-static void FNCPreferencesChangedCallback(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo) {
-	FNCPreferencesChanged();
-}
-
-
-   FNCPreferencesChanged();
-
-	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-	CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, FNCPreferencesChangedCallback, CFSTR(FNCPreferencesChangedNotification), NULL, CFNotificationSuspensionBehaviorCoalesce);
-	[pool release];
-}
-
-*/

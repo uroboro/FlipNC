@@ -30,7 +30,7 @@
 			<key>color</key>
 			<string>#000000</string>
 			<key>opacity</key>
-			<real>0.59999999999999998</real>
+			<real>0.6</real>
 			<key>size</key>
 			<integer>45</integer>
 			<key>type</key>
@@ -46,7 +46,7 @@
 			<key>color</key>
 			<string>#000000</string>
 			<key>opacity</key>
-			<real>0.69999999999999996</real>
+			<real>0.7</real>
 			<key>size</key>
 			<integer>45</integer>
 			<key>type</key>
@@ -62,7 +62,7 @@
 			<key>color</key>
 			<string>#000000</string>
 			<key>opacity</key>
-			<real>0.80000000000000004</real>
+			<real>0.8</real>
 			<key>size</key>
 			<integer>45</integer>
 			<key>type</key>
@@ -98,7 +98,7 @@
 			<key>cutoutY</key>
 			<real>0.5</real>
 			<key>opacity</key>
-			<real>0.93999999999999995</real>
+			<real>0.94</real>
 			<key>size</key>
 			<integer>45</integer>
 			<key>type</key>
