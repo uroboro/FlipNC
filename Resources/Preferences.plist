@@ -19,7 +19,7 @@
 		</dict>
 		<dict>
 			<key>PostNotification</key>
-			<string>com.uroboro.flipnc.preferences.changed</string>
+			<string>com.uroboro.flipnc/preferences.changed</string>
 			<key>cell</key>
 			<string>PSLinkListCell</string>
 			<key>default</key>
@@ -55,7 +55,7 @@
 			<key>flipswitchNewAreDisabled</key>
 			<false/>
 			<key>flipswitchPostNotification</key>
-			<string>com.uroboro.flipnc.flipswitches.changed</string>
+			<string>com.uroboro.flipnc/flipswitches.changed</string>
 			<key>flipswitchSettingsFile</key>
 			<string>/var/mobile/Library/Preferences/com.uroboro.FlipNC.plist</string>
 			<key>flipswitchTemplateBundle</key>

@@ -1,13 +1,41 @@
 #import "FlipNCController.h"
+/*
+NSError *error = nil;
+NSArray *bundles = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:@"/Library/Application Support/FlipNC/" error:&error];
+NSString *bundlePath = [NSString stringWithFormat:@"/Library/Application Support/FlipNC/%@", [bundles objectAtIndex:templateIdx]];
+NSBundle *bundle = [NSBundle bundleWithPath:bundlePath];
+*/
 
-static NSString* const preferencesFilePath = @"/User/Library/Preferences/com.uroboro.FlipNC.plist";
+static NSString *nsDomainString = @"com.uroboro.FlipNC";
+static NSString *nsNotificationString = @"com.uroboro.flipnc/preferences.changed";
+static NSString *fsNotificationString = @"com.uroboro.flipnc/flipswitches.changed";
+
 static NSBundle *_FlipNCWeeAppBundle = nil;
-static BOOL _landscape;
+static FlipNCController *_probablyUnique = nil;
 
 #define showAlert(t, m) [[[[UIAlertView alloc] initWithTitle:(t) message:(m) delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil] autorelease] show];
 
+#define CMCLog(format, ...) \
+	NSLog(@"\033[1;36m(%s) in [%s:%d]\033[0m \033[5;32;40m:::\033[0m \033[0;31m%@\033[0m", __PRETTY_FUNCTION__, __FILE__, __LINE__, [NSString stringWithFormat:format, ## __VA_ARGS__])
+
+
+@interface NSUserDefaults (Tweak_Category)
+- (id)objectForKey:(NSString *)key inDomain:(NSString *)domain;
+- (void)setObject:(id)value forKey:(NSString *)key inDomain:(NSString *)domain;
+@end
+#define standardObjectForKey(key) [[NSUserDefaults standardUserDefaults] objectForKey:key inDomain:nsDomainString]
+
+static void notificationCallback(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo) {
+	[_probablyUnique updateVars];
+}
+
+static void fsnotificationCallback(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo) {
+	[_probablyUnique updateSwitchList];
+}
+	
 @implementation FlipNCController
 @synthesize view = _view;
+//@synthesize templateName = _templateName;
 
 + (void)initialize {
 	_FlipNCWeeAppBundle = [[NSBundle bundleForClass:[self class]] retain];
@@ -16,7 +44,17 @@ static BOOL _landscape;
 - (id)init {
 	if ((self = [super init]) != nil) {
 		// do init stuff
-	} return self;
+		_probablyUnique = self;
+		//CMCLog(@"uroboro :: [%@ init]", NSStringFromClass([self class]));
+		// Set variables on start up
+		[self updateVars];
+		[self updateSwitchList];
+ 
+		// Register for 'PostNotification' notifications
+		CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, notificationCallback, (CFStringRef)nsNotificationString, NULL, CFNotificationSuspensionBehaviorCoalesce);
+		CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, fsnotificationCallback, (CFStringRef)fsNotificationString, NULL, CFNotificationSuspensionBehaviorCoalesce);
+	}
+	return self;
 }
 
 - (void)dealloc {
@@ -25,35 +63,35 @@ static BOOL _landscape;
 	[super dealloc];
 }
 
+- (void)updateSwitchList {
+	_ids = [standardObjectForKey(@"Enabled") retain];
+}
+
+- (void)updateVars {
+	_rows = [(NSNumber *)standardObjectForKey(@"Rows") intValue];
+
+	_switchesPerRow = [(NSNumber *)standardObjectForKey(@"SwitchesPerRow") intValue];
+	_unpaged = !_switchesPerRow;
+
+	_templateIdx = [(NSNumber *)standardObjectForKey(@"TemplateIdx") intValue];
+}
+
 - (float)viewHeight {
-	NSDictionary *prefs = [[NSDictionary alloc] initWithContentsOfFile:preferencesFilePath];
-	int templateIdx = [[prefs objectForKey:@"TemplateIdx"] intValue];
-	int rows = [[prefs objectForKey:@"Rows"] intValue];
-	[prefs release];
 
 	NSArray *templates = [[NSArray alloc] initWithObjects:MyTemplatePath, SITemplatePath, nil];
-	NSBundle *templateBundle = [[NSBundle alloc] initWithPath:[templates objectAtIndex:templateIdx]];
+	NSBundle *templateBundle = [[NSBundle alloc] initWithPath:[templates objectAtIndex:_templateIdx]];
 	[templates release];
 	CGFloat iconHeight = [[templateBundle.infoDictionary objectForKey:@"height"] floatValue];
 	[templateBundle release];
 
-	return (rows)?rows:1 * (10 + iconHeight) + (float)(2 << 1);
+	return (_rows)?_rows:1 * (10 + iconHeight) + (float)(2 << 1);
 }
 
 - (void)loadFullView {
 	// Add subviews to _backgroundView (or _view) here.
 
-	NSDictionary *prefs = [[NSDictionary alloc] initWithContentsOfFile:preferencesFilePath];
-	NSArray *ids = [[prefs objectForKey:@"Enabled"] retain];
-	int templateIdx = [[prefs objectForKey:@"TemplateIdx"] intValue];
-	int switchesPerRow = [[prefs objectForKey:@"SwitchesPerRow"] intValue];
-	BOOL unpaged = !switchesPerRow;
-//	int rows = [[prefs objectForKey:@"Rows"] intValue];
-	CGFloat offset = [[prefs objectForKey:@"Offset"] floatValue];
-	[prefs release];
-
 	NSArray *templates = [[NSArray alloc] initWithObjects:MyTemplatePath, SITemplatePath, nil];
-	NSBundle *templateBundle = [[NSBundle alloc] initWithPath:[templates objectAtIndex:templateIdx]];
+	NSBundle *templateBundle = [[NSBundle alloc] initWithPath:[templates objectAtIndex:_templateIdx]];
 	[templates release];
 
 	CGFloat iconWidth = [[templateBundle.infoDictionary objectForKey:@"width"] floatValue];
@@ -62,28 +100,32 @@ static BOOL _landscape;
 	CGFloat screenWidth = _backgroundView.frame.size.width;
 	CGFloat screenHeight = _backgroundView.frame.size.height;
 
-	int defaultSwitchesPerRow = (_landscape)?7:4;
+	int defaultSwitchesPerRow = (_landscape)? 7:4;
+	int actualSwitchesPerRow = (_unpaged)? defaultSwitchesPerRow:_switchesPerRow;
 
-	CGFloat xSpacing = (CGFloat)(screenWidth - ((unpaged)? defaultSwitchesPerRow:switchesPerRow) * iconWidth) / (((unpaged)? defaultSwitchesPerRow:switchesPerRow) + 1);
-	CGFloat contentWidth = (unpaged)? (xSpacing + [ids count] * (iconWidth + xSpacing)) : (screenWidth * ([ids count] / switchesPerRow + ([ids count] % switchesPerRow != 0)));
+	CGFloat xSpacing = (CGFloat)(screenWidth - actualSwitchesPerRow * iconWidth) / (actualSwitchesPerRow + 1);
+	CGFloat contentWidth = (_unpaged)? (xSpacing + [_ids count] * (iconWidth + xSpacing)) : (screenWidth * ([_ids count] / _switchesPerRow + ([_ids count] % _switchesPerRow != 0)));
+
+	CGFloat offset = [(NSNumber *)standardObjectForKey(@"Offset") floatValue];
+	offset *= screenWidth;
+	offset = (contentWidth - offset < screenWidth)? contentWidth-screenWidth:offset;
 
 	UIScrollView *scv = [[UIScrollView alloc] initWithFrame:CGRectMake(2, 0, screenWidth, screenHeight - 2)];
 	[scv setScrollEnabled:YES];
-	[scv setPagingEnabled:!unpaged];
+	[scv setPagingEnabled:!_unpaged];
 	[scv setContentSize:CGSizeMake(contentWidth, screenHeight - 2)];
-	[scv setContentOffset:CGPointMake(offset * screenWidth, 0.0) animated:NO];
+	[scv setContentOffset:CGPointMake(offset, 0.0) animated:NO];
 	[scv setAutoresizingMask:UIViewAutoresizingFlexibleWidth];
 
 	FSSwitchPanel *fsp = [FSSwitchPanel sharedPanel];
-	for (int idx = 0; idx < [ids count]; idx++) {
-		NSString *identifier = [ids objectAtIndex:idx];
+	for (int idx = 0; idx < [_ids count]; idx++) {
+		NSString *identifier = [_ids objectAtIndex:idx];
 		UIButton *button = [fsp buttonForSwitchIdentifier:identifier usingTemplate:templateBundle];
-		CGFloat x = (unpaged)? (xSpacing + idx * (iconWidth + xSpacing)) : (xSpacing + (idx / switchesPerRow) * screenWidth + (idx % switchesPerRow) * (iconWidth + xSpacing));
+		CGFloat x = (_unpaged)? (xSpacing + idx * (iconWidth + xSpacing)) : (xSpacing + (idx / _switchesPerRow) * screenWidth + (idx % _switchesPerRow) * (iconWidth + xSpacing));
 		[button setFrame:CGRectMake(x, 5, iconWidth, iconHeight)];
 		[scv addSubview:button];
 	}
 	[templateBundle release];
-	[ids release];
 
 	[_view addSubview:scv];
 	[scv release];
@@ -111,10 +153,7 @@ static BOOL _landscape;
 	if (scv) {
 		//offset is a percentage of the "screen" width
 		CGFloat offset = scv.contentOffset.x / ((_landscape)? 564:316);
-		NSMutableDictionary *prefs = [[NSMutableDictionary alloc] initWithContentsOfFile:preferencesFilePath];
-		[prefs setObject:[NSNumber numberWithFloat:offset] forKey:@"Offset"];
-		[prefs writeToFile:preferencesFilePath atomically:YES];
-		[prefs release];
+		[[NSUserDefaults standardUserDefaults] setObject:[NSNumber numberWithFloat:offset] forKey:@"Offset" inDomain:nsDomainString];
 	}
 }
 

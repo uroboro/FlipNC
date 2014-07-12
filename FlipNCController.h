@@ -15,15 +15,30 @@
 #define SIiPadTemplatePath @"/Library/Application Support/FlipNC/SwitchIconsTemplate~ipad.bundle"
 #define SITemplatePath (isPad()?SIiPadTemplatePath:SIiPhoneTemplatePath)
 
-static NSString* const PreferencesFilePath;
 static NSBundle *_FlipNCWeeAppBundle;
 
-@interface FlipNCController: NSObject <BBWeeAppController> {
+@interface FlipNCController: NSObject <BBWeeAppController, UIScrollViewDelegate> {
 	UIView *_view;
 	UIImageView *_backgroundView;
-}
-@property (nonatomic, retain) UIView *view;
-@end
 
+	BOOL _landscape;
+
+	int _rows;
+	int _switchesPerRow;
+	BOOL _unpaged;
+
+	NSArray *_ids;
+	
+	int _templateIdx;
+//	NSString *_templateName;
+}
+
+@property (nonatomic, retain) UIView *view;
+//@property (nonatomic, retain) NSString *templateName;
+
+- (void)updateSwitchList;
+- (void)updateVars;
+
+@end
 
 #endif /* FLIPNC_HEADER */
