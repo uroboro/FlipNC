@@ -53,7 +53,7 @@
 			<key>flipswitchEnabledKey</key>
 			<string>Enabled</string>
 			<key>flipswitchNewAreDisabled</key>
-			<false/>
+			<true/>
 			<key>flipswitchPostNotification</key>
 			<string>com.uroboro.flipnc/flipswitches.changed</string>
 			<key>flipswitchSettingsFile</key>
