@@ -20,6 +20,8 @@
 	<string>iphoneos</string>
 	<key>MinimumOSVersion</key>
 	<string>2.0</string>
+	<key>width</key>
+	<integer>59</integer>
 	<key>height</key>
 	<integer>60</integer>
 	<key>layers</key>
@@ -178,7 +180,5 @@
 			<integer>7</integer>
 		</dict>
 	</array>
-	<key>width</key>
-	<integer>59</integer>
 </dict>
 </plist>
