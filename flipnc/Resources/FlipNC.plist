@@ -2,15 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>entry</key>
-	<dict>
-		<key>cell</key>
-		<string>PSLinkCell</string>
-		<key>icon</key>
-		<string>/Applications/Preferences.app/icon-table@2x.png</string>
-		<key>label</key>
-		<string>FlipNC</string>
-	</dict>
 	<key>title</key>
 	<string>FlipNC</string>
 	<key>items</key>
@@ -21,7 +12,7 @@
 			<key>footerText</key>
 			<string>Developed by uroboro © 2014</string>
 		</dict>
-		<dict>
+ 		<dict>
 			<key>PostNotification</key>
 			<string>com.uroboro.flipnc/preferences.changed</string>
 			<key>cell</key>
@@ -36,16 +27,10 @@
 			<string>TemplateName</string>
 			<key>label</key>
 			<string>Template</string>
-			<key>validTitles</key>
-			<array>
-				<string>FlipNC</string>
-				<string>SwitchIcons (by rpetrich)</string>
-			</array>
-			<key>validValues</key>
-			<array>
-				<string>FlipNCTemplate</string>
-				<string>SwitchIcons</string>
-			</array>
+			<key>valuesDataSource</key>
+			<string>templateValues</string>
+			<key>titlesDataSource</key>
+			<string>templateTitles</string>
 		</dict>
 		<dict>
 			<key>bundle</key>
