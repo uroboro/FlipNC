@@ -7,7 +7,7 @@
 	<key>CFBundleDisplayName</key>
 	<string>FlipNC</string>
 	<key>CFBundleIconFile</key>
-	<string>icon@2x.png</string>
+	<string>Icon.png</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.uroboro.flipnc</string>
 	<key>CFBundleInfoDictionaryVersion</key>
