@@ -1,4 +1,5 @@
 #import <objc/runtime.h>
+#import <flipswitch/FSSwitchPanel.h>
 #import "FlipNCController.h"
 
 #define MARGIN (float)(1 << 3)
@@ -89,6 +90,16 @@ CMCLog(@"flipnc :: _rows = %d", _rows);
 	}
 }
 
+- (void)viewWillDisappear {
+	//save scrollview offset
+	UIScrollView *scv = ([self.view.subviews count] > 1)? (UIScrollView *)[self.view.subviews objectAtIndex:1]:nil; //prevent NSRangeException
+	if (scv) {
+		//offset is a percentage of the "screen" width
+		CGFloat offset = scv.contentOffset.x / ((_landscape)? 564:316);
+		_setStandardObjectForKey([NSNumber numberWithFloat:offset], @"Offset");
+	}
+}
+
 - (UIView *)iconContainerWithFrame:(CGRect)frame
 		bundle:(NSBundle *)templateBundle
 		icons:(NSArray *)iconIdentifiers
@@ -121,7 +132,7 @@ CMCLog(@"flipnc :: _rows = %d", _rows);
 	[scv setContentSize:CGSizeMake(contentWidth, screenHeight)];
 	[scv setContentOffset:CGPointMake(offset, 0.0) animated:NO];
 	[scv setAutoresizingMask:UIViewAutoresizingFlexibleWidth];
-	
+
 	FSSwitchPanel *fsp = [FSSwitchPanel sharedPanel];
 	for (int idx = 0; idx < count; idx++) {
 		NSString *identifier = [iconIdentifiers objectAtIndex:idx];
@@ -131,16 +142,6 @@ CMCLog(@"flipnc :: _rows = %d", _rows);
 		[scv addSubview:button];
 	}
 	return [scv autorelease];
-}
-
-- (void)viewWillDisappear {
-	//save scrollview offset
-	UIScrollView *scv = ([self.view.subviews count] > 1)? (UIScrollView *)[self.view.subviews objectAtIndex:1]:nil; //prevent NSRangeException
-	if (scv) {
-		//offset is a percentage of the "screen" width
-		CGFloat offset = scv.contentOffset.x / ((_landscape)? 564:316);
-		_setStandardObjectForKey([NSNumber numberWithFloat:offset], @"Offset");
-	}
 }
 
 @end

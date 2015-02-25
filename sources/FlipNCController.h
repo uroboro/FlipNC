@@ -1,7 +1,6 @@
 #ifndef FLIPNC_HEADER
 #define FLIPNC_HEADER
 
-#import <flipswitch/FSSwitchPanel.h>
 #import "BaseWeeappController.h"
 
 #ifdef UIUserInterfaceIdiomPad
@@ -11,12 +10,6 @@
 #endif
 
 #define showAlert(t, m) [[[[objc_getClass("UIAlertView") alloc] initWithTitle:(t) message:(m) delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil] autorelease] show];
-
-#define CMCLog(format, ...) \
-	NSLog(@"\033[1;36m(%s) in [%s:%d]\033[0m \033[5;32;40m:::\033[0m \033[0;31m%@\033[0m", __PRETTY_FUNCTION__, __FILE__, __LINE__, [NSString stringWithFormat:format, ## __VA_ARGS__])
-
-#define CMCLogObjDescript(a) \
-	CMCLog(@"flipnc :: %s=%@", #a, [a description])
 
 @interface NSUserDefaults (Tweak_Category)
 + (void)resetStandardUserDefaults;
