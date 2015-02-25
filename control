@@ -1,6 +1,6 @@
 Package: com.uroboro.flipnc
 Name: FlipNC
-Depends: firmware (>= 5.0), com.saurik.substrate.safemode, com.chpwn.weeloader (>= 1.4), com.a3tweaks.flipswitch (>= 1.0.3), org.thebigboss.customwidgeticons, com.arichardson.weepreferenceloader
+Depends: firmware (>= 5.0), com.saurik.substrate.safemode, com.chpwn.weeloader (>= 1.4), com.a3tweaks.flipswitch (>= 1.0.3), com.arichardson.weepreferenceloader
 Version: 0.0.3
 Architecture: iphoneos-arm
 Description: FlipNC brings your FlipSwitch toggles to your notification center.
